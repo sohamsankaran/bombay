@@ -1,0 +1,79 @@
+Node Profile Schema
+====================
+{
+  "id": <id>
+  "ip": <ip address>
+  "node_properties": {
+    "space_total": <total storage space in node>,
+    "space_remaining": <total storage_space in node>,
+    "uptime": <uptime % -> example: 0.98>,
+    "avg_bandwidth": <average bandwidth to other nodes when up>,
+    "peak_bandwidth": <peak bandwith to other nodes (avg across all node) when up>,
+    "seq_read_speed": <sequential read speed for the machine's hard-drive>,
+    "rand_read_speed": <random read speed for the machine's hard-drive>,
+    "failure_rate": <probability the machine will fail catastrophically such that data will be lost forever based on historical data for the machine type and hard drive type>
+  }
+}
+
++++++++++++++
+
+
+Get
+====
+
+Req Schema
+{
+  "key": <key>,
+  "liveness": <maximal number of miliseconds before now this data was cached> #optional, default 0>
+}
+
+Res Schema
+{
+  "err": <error type, default 0, catch-all 1>,
+  "value": <value, default "None">
+}
+
++++++++++++++
+
+
+Put
+====================
+
+Req Schema
+{
+  "key": <key>,
+  "value": <value>,
+  "data_properties": {
+    "space_req": <space required to store key+value>,
+    "uptime": <uptime required>,
+    "durability_time": <time in miliseconds that that the data needs to survive with a % likelihood == durability_percentage>,
+    "durability_percentage" <% likelihood that the data must survive for durability_time>,
+    "avg_bandwidth" <average bandwidth required for the data>,
+    "peak_bandwidth" <peak bandwidth required for the data>
+  }
+}
+
+Res Schema
+{
+  "store_status": <0 for success, 1 for failure>,
+  "req_fulfilled": <0 for no, 1 for yes>,
+  "data_properties": { #optional, only returned if req_fulfilled = 0
+    # see data_properties above in Req_Schema
+  }
+}
++++++++++++++++++++++
+
+
+Delete                     # not implemented
+=================
+
+Req Schema
+{
+  "key": <key>
+}
+
+Res Schema
+{
+  "err": <error type, default 0, catch-all 1>,
+  "value": <value, default "None">
+}
