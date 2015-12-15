@@ -1,0 +1,15 @@
+sudo apt-get update
+
+# go
+cd ~/
+wget http://dave.cheney.net/paste/go1.5.2.linux-arm.tar.gz
+tar -C /usr/local -xzf go1.5.2.linux-arm.tar.gz
+
+
+# alternator
+
+# optional
+sudo apt-get install vim
+
+
+#a
