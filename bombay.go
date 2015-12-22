@@ -24,7 +24,7 @@ var sigChan chan os.Signal
 type Node_properties struct {
     Space_total int             `json:"space_total"`
     Space_remaining int         `json:"pace_remaining"`
-    Uptime float32                      `json:"uptime"`
+    Uptime float32              `json:"uptime"`
     Avg_bandwidth int           `json:"avg_bandwidth"`
     Peak_bandwidth int          `json:"peak_bandwidth"`
     Seq_read_speed int          `json:"seq_read_speed"`
@@ -43,25 +43,25 @@ type Get_res struct {
 }
 
 type Put_req struct {
-    Key string                                          `json:"key"`
-    Value string                                        `json:"value"`
-    Space_req int                                       `json:"space_req",omitempty`
-    Uptime float32                                      `json:"uptime", omitempty`
-    Avg_bandwidth int                           `json:"avg_bandwidth",omitempty`
-    Peak_bandwidth int                          `json:"peak_bandwidth",omitempty`
-    Durability_time int                         `json:"durability_time",omitempty`
-    Durability_percentage float32       `json:"durability_percentage",omitempty`
+    Key string                      `json:"key"`
+    Value string                    `json:"value"`
+    Space_req int                   `json:"space_req",omitempty`
+    Uptime float32                  `json:"uptime", omitempty`
+    Avg_bandwidth int               `json:"avg_bandwidth",omitempty`
+    Peak_bandwidth int              `json:"peak_bandwidth",omitempty`
+    Durability_time int             `json:"durability_time",omitempty`
+    Durability_percentage float32   `json:"durability_percentage",omitempty`
 }
 
 type Put_res struct {
-    Err int                                             `json:"err"`
-    Req_satisfied int                           `json:"req_satisfied"`
-    Space_req int                                       `json:"space_req",omitempty`
-    Uptime float32                                      `json:"uptime", omitempty`
-    Avg_bandwidth int                           `json:"avg_bandwidth",omitempty`
-    Peak_bandwidth int                          `json:"peak_bandwidth",omitempty`
-    Durability_time int                         `json:"durability_time",omitempty`
-    Durability_percentage float32       `json:"durability_percentage",omitempty`
+    Err int                         `json:"err"`
+    Req_satisfied int               `json:"req_satisfied"`
+    Space_req int                   `json:"space_req",omitempty`
+    Uptime float32                  `json:"uptime", omitempty`
+    Avg_bandwidth int               `json:"avg_bandwidth",omitempty`
+    Peak_bandwidth int              `json:"peak_bandwidth",omitempty`
+    Durability_time int             `json:"durability_time",omitempty`
+    Durability_percentage float32   `json:"durability_percentage",omitempty`
 }
 
 
