@@ -8,6 +8,7 @@ import (
     "flag"
     "os"
     "os/exec"
+    "strconv"
     //"encoding/hex"
     //"syscall"
     //"encoding/json"
@@ -82,7 +83,7 @@ func main() {
     flag.StringVar(&port, "port", "1337", "port that the bombay service will use for communication.")
     flag.StringVar(&command, "command", "", "name of command.")
     flag.StringVar(&tal_port, "profileport", "1413", "port that bombay will start the profiler service (talese) on.")
-    flag.IntVar(&tal_timeout, "profiletimeout", 1000, "sets the amount of time in miliseconds between node profile refreshes.")
+    flag.IntVar(&tal_timeout, "profiletimeout", 10, "sets the amount of time in miliseconds between node profile refreshes.")
     flag.StringVar(&alt_port, "dataport", "0", "port that bombay will start the datastore service (alternator) on.")
     flag.StringVar(&alt_joinAddr, "joinaddr", "127.0.0.1", "joins the ring that the node at [joinaddr]:[joinport] belongs to.")
     flag.StringVar(&alt_joinPort, "joinport", "0", "joins the ring that the node at [joinaddr]:[joinport] belongs to.")
@@ -152,7 +153,9 @@ func runAlternator(port string, joinPort string, joinAddr string) {
 func runTalese(port string, timeout int) {
     //pstr := os.Getenv("GOPATH")+"/src/bombay/talese.py"
     pstr := "./talese.py"
-    cmd := exec.Command(pstr, "--port", port, "--timeout", string(timeout))
+    cmd := exec.Command(pstr, "--port", port, "--timeout", strconv.Itoa(timeout))
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
     err := cmd.Start()
     printError(err)
 }
