@@ -19,6 +19,7 @@ url = args.url + ':' + args.port + '/updateprofile'
 
 
 node_properties = {
+                    "machine_id" : "",
                     "space_total": "",
                     "space_remaining": "",
                     "uptime": 0.95,
@@ -28,6 +29,8 @@ node_properties = {
                    "rand_read_speed": "",
                     "failure_rate": 0.01
                   }
+
+node_properties["machine_id"] = args.url + ':' + args.port
 
 while (1):
 

@@ -11,7 +11,7 @@ import (
     "strconv"
     //"encoding/hex"
     //"syscall"
-    //"encoding/json"
+    "encoding/json"
     //"io/ioutil"
     "github.com/ant0ine/go-json-rest/rest"
     "github.com/DiegoAlbertoTorres/alternator"
@@ -23,6 +23,7 @@ var config alternator.Config
 var sigChan chan os.Signal
 
 type Node_properties struct {
+    Machine_id string           `json:"machine_id"`
     Space_total int             `json:"space_total"`
     Space_remaining int         `json:"pace_remaining"`
     Uptime float32              `json:"uptime"`
@@ -84,7 +85,7 @@ func main() {
     flag.StringVar(&command, "command", "", "name of command.")
     flag.StringVar(&tal_port, "profileport", "1413", "port that bombay will start the profiler service (talese) on.")
     flag.IntVar(&tal_timeout, "profiletimeout", 10, "sets the amount of time in miliseconds between node profile refreshes.")
-    flag.StringVar(&alt_port, "dataport", "0", "port that bombay will start the datastore service (alternator) on.")
+    flag.StringVar(&alt_port, "dataport", "55482", "port that bombay will start the datastore service (alternator) on.")
     flag.StringVar(&alt_joinAddr, "joinaddr", "127.0.0.1", "joins the ring that the node at [joinaddr]:[joinport] belongs to.")
     flag.StringVar(&alt_joinPort, "joinport", "0", "joins the ring that the node at [joinaddr]:[joinport] belongs to.")
     flag.IntVar(&config.MemberSyncTime, "memberSyncTime", 1000, "sets the time between membership syncs with a random node.")
@@ -185,6 +186,18 @@ func UpdateProfile(w rest.ResponseWriter, r *rest.Request) {
     lock.Lock()
     node_properties = np_temp
     lock.Unlock()
+    dlist := getallids()
+    name := node_properties.Machine_id + "_m"
+    data, err := json.Marshal(node_properties)
+    if err != nil {
+        rest.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    } 
+    rerr := putk(name, data, dlist)
+    if rerr != 0 {
+        rest.Error(w, strconv.Itoa(rerr), http.StatusInternalServerError)
+        return
+    }
     w.WriteHeader(http.StatusOK)
 }
 
@@ -224,8 +237,10 @@ func PutKey(w rest.ResponseWriter, r *rest.Request) {
         return
     }
     name := put_req.Key + "_k"
-    dlist := kamino(put_req, &put_res)
-    rerr := putk(name, put_req.Value, dlist)
+    //dlist := kamino(put_req, &put_res)
+    dlist := getallids()
+    val := []byte(put_req.Value)
+    rerr := putk(name, val, dlist)
     if rerr != 0 {
         put_res.Err = rerr
     }
@@ -262,7 +277,7 @@ func getk(k string) (v string, rerr int) {
     return
 }
 
-func putk(k string, v string, dests []alternator.Key) (rerr int) {
+func putk(k string, val []byte, dests []alternator.Key) (rerr int) {
     rerr = 0 //default no error
     if len(dests) < 1 {
         fmt.Println("No destination listed")
@@ -280,8 +295,7 @@ func putk(k string, v string, dests []alternator.Key) (rerr int) {
         fmt.Println("could not reach alternator")
         return
     }
-    val := []byte(v)
-    fmt.Println("Putting pair " + k + "," + v)
+    //fmt.Println("Putting pair " + k + "," + v)
     putArgs := alternator.PutArgs{Name: k, V: val, Replicators: dests, Success: 0}
     err = client.Call("Node."+"Put", &putArgs, &struct{}{})
     if err != nil {
@@ -315,6 +329,16 @@ func kamino(put_req Put_req, pres *Put_res) (dests []alternator.Key) {
     mlist,_ := getmembers()
     for _,cmem := range mlist {
         dests = append(dests, cmem.ID)
+    }
+    return
+}
+
+func getallids() (dests []alternator.Key) {
+    // get a list of all member ids
+    mlist,_ := getmembers()
+    for _,cmem := range mlist {
+        dests = append(dests, cmem.ID)
+        fmt.Println("http://" + cmem.Address + "_m")
     }
     return
 }
