@@ -279,7 +279,7 @@ func putk(k string, v string, dests []alternator.Key) (rerr int) {
     }
     val := []byte(v)
     fmt.Println("Putting pair " + k + "," + v)
-    putArgs := alternator.PutArgs{Name: k, V: val, Replicants: dests, Success: 0}
+    putArgs := alternator.PutArgs{Name: k, V: val, Replicators: dests, Success: 0}
     err = client.Call("Node."+"Put", &putArgs, &struct{}{})
     if err != nil {
         rerr = 3
