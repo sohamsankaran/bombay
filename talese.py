@@ -30,7 +30,7 @@ node_properties = {
                     "failure_rate": 0.01
                   }
 
-node_properties["machine_id"] = args.url + ':' + args.port
+node_properties["machine_id"] = "http://172.28.153.53:55482"
 
 while (1):
 

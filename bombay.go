@@ -16,6 +16,7 @@ import (
     "github.com/ant0ine/go-json-rest/rest"
     "github.com/DiegoAlbertoTorres/alternator"
     "net/rpc"
+    "github.com/deckarep/golang-set"
 )
 
 var config alternator.Config
@@ -26,12 +27,12 @@ type Node_properties struct {
     Machine_id string           `json:"machine_id"`
     Space_total int             `json:"space_total"`
     Space_remaining int         `json:"pace_remaining"`
-    Uptime float32              `json:"uptime"`
+    Uptime float64              `json:"uptime"`
     Avg_bandwidth int           `json:"avg_bandwidth"`
     Peak_bandwidth int          `json:"peak_bandwidth"`
     Seq_read_speed int          `json:"seq_read_speed"`
     Rand_read_speed int         `json:"rand_read_speed"`
-    Failure_rate float32        `json:"failure_rate"`
+    Failure_rate float64        `json:"failure_rate"`
 }
 
 type Get_req struct {
@@ -48,22 +49,22 @@ type Put_req struct {
     Key string                      `json:"key"`
     Value string                    `json:"value"`
     Space_req int                   `json:"space_req",omitempty`
-    Uptime float32                  `json:"uptime", omitempty`
+    Uptime float64                  `json:"uptime", omitempty`
     Avg_bandwidth int               `json:"avg_bandwidth",omitempty`
     Peak_bandwidth int              `json:"peak_bandwidth",omitempty`
     Durability_time int             `json:"durability_time",omitempty`
-    Durability_percentage float32   `json:"durability_percentage",omitempty`
+    Durability_percentage float64   `json:"durability_percentage",omitempty`
 }
 
 type Put_res struct {
     Err int                         `json:"err"`
     Req_satisfied int               `json:"req_satisfied"`
     Space_req int                   `json:"space_req",omitempty`
-    Uptime float32                  `json:"uptime", omitempty`
+    Uptime float64                  `json:"uptime", omitempty`
     Avg_bandwidth int               `json:"avg_bandwidth",omitempty`
     Peak_bandwidth int              `json:"peak_bandwidth",omitempty`
     Durability_time int             `json:"durability_time",omitempty`
-    Durability_percentage float32   `json:"durability_percentage",omitempty`
+    Durability_percentage float64   `json:"durability_percentage",omitempty`
 }
 
 
@@ -217,7 +218,9 @@ func GetKey(w rest.ResponseWriter, r *rest.Request) {
         return
     }
     name := get_req.Key + "_k"
-    get_res.Value, get_res.Err = getk(name)
+    var val []byte
+    val, get_res.Err = getk(name)
+    get_res.Value = string(val)
     w.WriteJson(get_res)
 }
 
@@ -237,8 +240,8 @@ func PutKey(w rest.ResponseWriter, r *rest.Request) {
         return
     }
     name := put_req.Key + "_k"
-    //dlist := kamino(put_req, &put_res)
-    dlist := getallids()
+    dlist := kamino(put_req, &put_res)
+    //dlist := getallids()
     val := []byte(put_req.Value)
     rerr := putk(name, val, dlist)
     if rerr != 0 {
@@ -252,15 +255,13 @@ func DeleteKey(w rest.ResponseWriter, r *rest.Request) {
     w.WriteHeader(http.StatusOK)
 }
 
-func getk(k string) (v string, rerr int) {
-    v = ""
+func getk(k string) (val []byte, rerr int) {
     rerr = 0 // default no error
     if k == "" { // key field is empty
         rerr = 1 // set err = 1 to signify no key requested
         return
     }
     client, err := rpc.DialHTTP("tcp", "127.0.0.1"+":"+alt_port)
-    var val []byte
     fmt.Println("Getting " + k)
     if err != nil {
         rerr = 2
@@ -273,7 +274,6 @@ func getk(k string) (v string, rerr int) {
         fmt.Println("RPC Failed")
         return
     }
-    v = string(val)
     return
 }
 
@@ -296,6 +296,7 @@ func putk(k string, val []byte, dests []alternator.Key) (rerr int) {
         return
     }
     //fmt.Println("Putting pair " + k + "," + v)
+    fmt.Println("Putting in " + k)
     putArgs := alternator.PutArgs{Name: k, V: val, Replicators: dests, Success: 0}
     err = client.Call("Node."+"Put", &putArgs, &struct{}{})
     if err != nil {
@@ -325,10 +326,50 @@ func getmembers() (members []alternator.Peer, rerr int){
 }
 
 func kamino(put_req Put_req, pres *Put_res) (dests []alternator.Key) {
-    // currently is crap, just gets all members
+    // only uses uptime for now
     mlist,_ := getmembers()
+    mmap := make(map[string]alternator.Key)
+    propmap := make(map[string]*Node_properties)
+    nodeset := mapset.NewSet()
     for _,cmem := range mlist {
-        dests = append(dests, cmem.ID)
+        //dests = append(dests, cmem.ID)
+        nodeset.Add(cmem.Address)
+        admod := "http://" + cmem.Address + "_m"
+        mmap[cmem.Address] = cmem.ID
+        cprop := Node_properties{}
+        cdat,_ := getk(admod)
+        err := json.Unmarshal(cdat, &cprop)
+        if err != nil {
+            fmt.Println("Failed to Unmarshal " + admod)
+        }
+        propmap[cmem.Address] = &cprop
+    }
+    npset := nodeset.PowerSet()
+    nplist := npset.ToSlice()
+    var cmatchs []interface{}
+    cmatchi := 0.0
+    pres.Req_satisfied = 0
+    for _,cset := range nplist {
+        clist := cset.(mapset.Set).ToSlice()
+        cfailp := 1.0
+        for _,cnode := range clist {
+            cfailp = cfailp * (1.0 - propmap[cnode.(string)].Uptime)
+        }
+        cuptime := 1.0 - cfailp
+        if cuptime >= put_req.Uptime {
+            pres.Req_satisfied = 1
+            cmatchi = cuptime
+            cmatchs = clist
+            break
+        }
+        if cuptime > cmatchi {
+            cmatchi = cuptime
+            cmatchs = clist
+        }
+    }
+    pres.Uptime = cmatchi
+    for _,cmod := range cmatchs {
+        dests = append(dests, mmap[cmod.(string)])
     }
     return
 }
