@@ -81,6 +81,7 @@ var tal_port string
 var tal_timeout int
 
 
+
 func main() {
     flag.StringVar(&port, "port", "1337", "port that the bombay service will use for communication.")
     flag.StringVar(&command, "command", "", "name of command.")
@@ -100,6 +101,8 @@ func main() {
     flag.BoolVar(&config.FullKeys, "fullKeys", false, "if true all keys (hashes) are printed completely.")
     flag.BoolVar(&config.CPUProfile, "cpuprofile", false, "write cpu profile to file")
     flag.Parse()
+
+    //http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 1000
 
     if command != "" {
         // stub
@@ -146,8 +149,8 @@ func runAlternator(port string, joinPort string, joinAddr string) {
     //pstr := os.Getenv("GOPATH")+"/bin/alternator"
     pstr := "./alternator" 
     cmd := exec.Command(pstr, "--port", port, "--target", joinAddr, "--join", joinPort)
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
+    //cmd.Stdout = os.Stdout
+    //cmd.Stderr = os.Stderr
     err := cmd.Start()
     printError(err)
 }
@@ -156,8 +159,8 @@ func runTalese(port string, timeout int) {
     //pstr := os.Getenv("GOPATH")+"/src/bombay/talese.py"
     pstr := "./talese.py"
     cmd := exec.Command(pstr, "--port", port, "--timeout", strconv.Itoa(timeout))
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
+    //cmd.Stdout = os.Stdout
+    //cmd.Stderr = os.Stderr
     err := cmd.Start()
     printError(err)
 }
@@ -188,7 +191,8 @@ func UpdateProfile(w rest.ResponseWriter, r *rest.Request) {
     node_properties = np_temp
     lock.Unlock()
     dlist := getallids()
-    name := node_properties.Machine_id + "_m"
+    //name := node_properties.Machine_id + "_m"
+    name := "http://172.28.153.53:" + alt_port + "_m"
     data, err := json.Marshal(node_properties)
     if err != nil {
         rest.Error(w, err.Error(), http.StatusInternalServerError)
@@ -241,6 +245,7 @@ func PutKey(w rest.ResponseWriter, r *rest.Request) {
     }
     name := put_req.Key + "_k"
     dlist := kamino(put_req, &put_res)
+    fmt.Println("Put request parameters success value: " + strconv.Itoa(put_res.Req_satisfied))
     //dlist := getallids()
     val := []byte(put_req.Value)
     rerr := putk(name, val, dlist)

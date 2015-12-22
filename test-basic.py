@@ -23,7 +23,7 @@ put_req = {
                     "key" : "",
                     "value": "gg",
                     "space_req": 0,
-                    "uptime": 0.95,
+                    "uptime": 0.8,
                     "avg_bandwidth": 1000, #mb/s
                     "peak_bandwidth": 1000, #mb/s
                     "durability_time": 10000,
@@ -35,7 +35,7 @@ while (1):
         put_req['key'] = str(random.randint(1,1000))
         r = requests.post(url, json=put_req)
 
-        print r
+        print r.text
 
         time.sleep(args.timeout)
         

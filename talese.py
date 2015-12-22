@@ -6,6 +6,7 @@ import psutil
 import time
 import argparse
 import setproctitle
+import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url', default="http://127.0.0.1", type=str)
@@ -31,6 +32,7 @@ node_properties = {
                   }
 
 node_properties["machine_id"] = "http://172.28.153.53:55482"
+node_properties["uptime"] = random.random()
 
 while (1):
 
